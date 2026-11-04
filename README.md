@@ -42,8 +42,13 @@ claude plugin marketplace add nik-yo/ai-skills
 claude plugin install ai-skills@nik-yo
 ```
 
-In the VS Code extension, type `/plugin` in the chat box to open the plugin manager, where you can add the marketplace
-and install the plugin.
+**In the VS Code extension:**
+
+1. Type `/plugins` in the chat box to open **Manage plugins**.
+2. On the **Marketplaces** tab, enter `nik-yo/ai-skills`.
+3. On the **Plugins** tab, find **ai-skills**, click **Install**, and choose **Install for you**.
+
+The extension and the CLI share plugin settings, so a plugin installed in one is available in the other.
 
 #### Using the skills
 
