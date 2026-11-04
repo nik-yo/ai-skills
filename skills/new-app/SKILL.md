@@ -65,7 +65,11 @@ The optional modules are **AI (Bedrock)**, **Maps & geocoding**, **Worker & queu
 Always ask about them, even when the other inputs were given. A question can offer at most 4 options, so use two multi-select
 questions in the same AskUserQuestion call, each module with a short description: one for **AI, Maps & geocoding, Worker & queue**
 and one for **Payments, Report & block**. Don't merge modules into one option to make them fit.
-Build only the ones the user picks. If the user skips the question or says none, build none. Never add an optional module because it seems useful.
+The answer form can't be submitted until every question has a selection, so make the modules optional: add a last option
+**None** ("Skip these modules") to each of the two questions. That keeps the first question at 4 options and the second at 3.
+Say in each question's text that the modules are optional.
+Build only the ones the user picks. If the user picks None, skips the question or says none, build none from that question.
+If they pick None together with a module, build the module. Never add an optional module because it seems useful.
 If users will see each other's content, mark Report & block as recommended in the question, because the App Store and
 Play Store require it.
 
