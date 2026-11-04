@@ -1,0 +1,14 @@
+{
+  "name": "nik-yo",
+  "description": "Claude Code plugins by nik-yo",
+  "owner": {
+    "name": "nik-yo"
+  },
+  "plugins": [
+    {
+      "name": "ai-skills",
+      "source": "./",
+      "description": "Skills for Claude Code, including new-app: scaffold a new multi-platform product on our standard stack."
+    }
+  ]
+}
