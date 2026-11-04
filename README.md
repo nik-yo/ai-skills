@@ -2,7 +2,7 @@
 
 Skills for [Claude Code](https://claude.com/claude-code). A skill is a folder with a `SKILL.md` file (plus optional
 reference files) that teaches Claude how to do a specific task. Claude loads it automatically when your request matches
-the skill's description. You can also run it directly as a slash command, such as `/new-app`.
+the skill's description. You can also run it directly as a slash command, such as `/ai-skills:new-app`.
 
 ## Skills
 
@@ -12,32 +12,78 @@ the skill's description. You can also run it directly as a slash command, such a
 
 ## Install
 
-### As a plugin (recommended)
+### As a Claude Code plugin (recommended)
 
-This repo is a Claude Code plugin marketplace. In a Claude Code session, run:
+This repo is a Claude Code plugin marketplace named `nik-yo`. It contains one plugin, `ai-skills`, which bundles every
+skill in [`skills/`](skills/). You don't need to clone the repo. Claude Code fetches it for you.
+
+**1. Add the marketplace.** This tells Claude Code where to find the plugin. You only do this once.
 
 ```
-/plugin marketplace add <repo-url>
+/plugin marketplace add nik-yo/ai-skills
+```
+
+**2. Install the plugin.**
+
+```
 /plugin install ai-skills@nik-yo
 ```
 
-`<repo-url>` is the git URL of this repo, or `owner/repo` if it's on GitHub. A local clone's path also works. If the
-repo is private, git on your machine must already be signed in to the host, because Claude Code can't prompt for
-credentials.
+`ai-skills` is the plugin, and `nik-yo` is the marketplace. Install for **user** scope if you want the skills in every
+project.
 
-Plugin skills are namespaced, so run the skill as `/ai-skills:new-app`. Claude also picks it up automatically when your
-request matches.
+**3. Start a new session** (or run `/reload-plugins`), then check that the skill loaded by running `/skills`.
+`ai-skills:new-app` appears in the list.
 
-**Updates:** run `/plugin marketplace update nik-yo`, or open `/plugin` → **Marketplaces** → `nik-yo` →
-**Enable auto-update** to receive new commits automatically.
+You can also do steps 1 and 2 from a terminal instead of a Claude Code session:
 
-**Share with a team:** in a project repo, run `claude plugin marketplace add <repo-url> --scope project` and commit the
-`.claude/settings.json` file it writes. Teammates are then offered the marketplace when they open that project.
+```sh
+claude plugin marketplace add nik-yo/ai-skills
+claude plugin install ai-skills@nik-yo
+```
+
+In the VS Code extension, type `/plugin` in the chat box to open the plugin manager, where you can add the marketplace
+and install the plugin.
+
+#### Using the skills
+
+Plugin skills get the plugin name as a prefix, so run the skill as `/ai-skills:new-app`. Claude also uses it
+automatically when your request matches. You don't have to type the command.
+
+#### Updating
+
+Claude Code doesn't pull new commits until you ask it to. You have two ways to update:
+
+- run `/plugin marketplace update nik-yo`, then restart the session, or
+- open `/plugin` → **Marketplaces** → `nik-yo` → **Enable auto-update** to update in the background from then on.
+
+#### Uninstalling
+
+```
+/plugin uninstall ai-skills@nik-yo
+/plugin marketplace remove nik-yo
+```
+
+#### Sharing with a team
+
+To offer the plugin to everyone who works in a project, run this in that project's folder:
+
+```sh
+claude plugin marketplace add nik-yo/ai-skills --scope project
+```
+
+Then commit the `.claude/settings.json` file it writes. When teammates open the project in Claude Code and trust the
+folder, the marketplace is added for them, and they install the plugin with step 2.
 
 ### With the install script
 
 If you don't want a plugin, clone this repo and run the install script from its root. It copies the skills into
 Claude Code's skills folder, where they run without a prefix (`/new-app`).
+
+```sh
+git clone https://github.com/nik-yo/ai-skills.git
+cd ai-skills
+```
 
 **Windows (PowerShell)**
 
