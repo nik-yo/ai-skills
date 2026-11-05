@@ -33,8 +33,8 @@ android/
   app/src/test/java/com/<company>/<app>/...
 ```
 
-**Gradle wrapper:** generate it with `gradle wrapper --gradle-version 9.6.0` in `android/`. Use `gradle` from PATH if it's there,
-or else a cached distribution at `~/.gradle/wrapper/dists/gradle-9.6.0-bin/*/gradle-9.6.0/bin/gradle`, which any earlier Gradle
+**Gradle wrapper:** generate it with `gradle wrapper --gradle-version 9.8.2` in `android/`. Use `gradle` from PATH if it's there,
+or else a cached distribution at `~/.gradle/wrapper/dists/gradle-9.8.2-bin/*/gradle-9.8.2/bin/gradle`, which any earlier Gradle
 project leaves behind. If neither exists, write `gradle-wrapper.properties` (below) and record in the report that the wrapper is
 missing. Opening the project in Android Studio creates it. Never write the jar by hand.
 
@@ -48,7 +48,7 @@ character, so `C:\Users\...` silently becomes a wrong path.
 # gradle/wrapper/gradle-wrapper.properties
 distributionBase=GRADLE_USER_HOME
 distributionPath=wrapper/dists
-distributionUrl=https\://services.gradle.org/distributions/gradle-9.6.0-bin.zip
+distributionUrl=https\://services.gradle.org/distributions/gradle-9.8.2-bin.zip
 networkTimeout=10000
 validateDistributionUrl=true
 zipStoreBase=GRADLE_USER_HOME
@@ -62,19 +62,19 @@ mavenCentral and gradlePluginPortal), `dependencyResolutionManagement` with `FAI
 ```toml
 # gradle/libs.versions.toml (core; modules add entries)
 [versions]
-agp = "9.4.1"
+agp = "9.5.1"
 kotlin = "2.4.21"
-coreKtx = "1.16.0"
-activityCompose = "1.10.1"
-lifecycle = "2.9.4"
-navigationCompose = "2.9.3"
+coreKtx = "1.19.1"
+activityCompose = "1.13.0"
+lifecycle = "2.11.0"
+navigationCompose = "2.10.2"
 composeBom = "2026.09.00"
-browser = "1.8.0"
+browser = "1.10.0"
 appauth = "0.11.1"
 retrofit = "2.11.0"
 okhttp = "4.12.0"
-kotlinxSerialization = "1.11.0"
-coroutines = "1.10.2"
+kotlinxSerialization = "1.12.0"
+coroutines = "1.11.0"
 junit = "4.13.2"
 
 [libraries]

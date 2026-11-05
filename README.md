@@ -153,3 +153,7 @@ Create `skills/<skill-name>/SKILL.md` with `name` and `description` frontmatter,
 The plugin and the install scripts both pick up every folder under `skills/` that contains a `SKILL.md`, so no other
 change is needed. After editing, run `claude plugin validate .` to check the manifests in
 [`.claude-plugin/`](.claude-plugin/).
+
+When you change any skill, bump `version` in [`.claude-plugin/plugin.json`](.claude-plugin/plugin.json). Use a minor bump for new
+features such as a new module, and a patch bump for fixes. Claude Code only sees an update when this version changes, so a
+change pushed without a bump never reaches people who already have the plugin installed.

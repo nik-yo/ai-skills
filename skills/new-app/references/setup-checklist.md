@@ -39,9 +39,18 @@ Follow the order in `infrastructure/README.md`. The steps that need you:
 - [ ] AI: enable access to each Bedrock model the config names.
 - [ ] Maps: create Mapbox and/or Google Places keys in SSM, and a Google Maps Android key restricted to `com.<company>.<app>` and its signing certificates.
 - [ ] Report & block: set the admin email and the action secret in SSM.
+- [ ] Push notifications:
+  - [ ] Create a Firebase project. Add the Android app `com.<company>.<app>` and the iOS app with the same bundle ID. Copy their identifiers into
+        `android/gradle.properties` (`<app>.firebase*`) and `ios/Config/Shared.xcconfig` (`<APP>_FIREBASE_*`), and commit them. Restrict the API keys to the apps in Google Cloud.
+  - [ ] In the Apple Developer account, enable Push Notifications on the App ID, create an APNs auth key (.p8), and upload it with its key ID and the team ID under
+        Firebase project settings → Cloud Messaging.
+  - [ ] Create a Google Cloud service account with the Firebase Cloud Messaging API Admin role, download a JSON key, and store it with
+        `aws ssm put-parameter --name /<app>/push/fcm-service-account --value file://<key>.json --overwrite`. Delete the downloaded file afterwards.
+        If the organization policy `iam.disableServiceAccountKeyCreation` blocks key creation, an admin has to allow it for this project.
+  - [ ] Redeploy `<app>-api`, then use Account → Notifications → Send test notification on a real Android device and a real iPhone.
 
 ## 7. Mobile stores
-- [ ] Android: generate an upload keystore (keep it out of git), create the Play Console app `com.<company>.<app>`, and complete Data safety and the content rating.
+- [ ] Android: generate an upload keystore (keep it out of git), create the Play Console app `com.<company>.<app>`, and complete Data safety (declare device IDs with the Push module) and the content rating.
 - [ ] iOS: create the App Store Connect app `com.<company>.<app>`, the App Privacy answers, and an App Store Connect API key (Admin role) for CI.
 - [ ] Replace the placeholder app icons and the brand color.
 

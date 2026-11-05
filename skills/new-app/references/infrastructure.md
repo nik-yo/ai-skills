@@ -235,7 +235,7 @@ Resources:
       Handler: index.handler
       MemorySize: 256
       Role: !GetAtt FederatedSignUpRole.Arn
-      Runtime: nodejs22.x
+      Runtime: nodejs24.x
       Timeout: 5 # Cognito waits at most 5 seconds for a trigger
 
   FederatedSignUpRole:

@@ -45,18 +45,18 @@ Conventions:
 | Project | Package | Version |
 | --- | --- | --- |
 | Api | Amazon.Lambda.AspNetCoreServer.Hosting | 2.2.1 |
-| Api | Microsoft.AspNetCore.Authentication.JwtBearer | 10.0.12 |
-| Api | Microsoft.AspNetCore.OpenApi | 10.0.12 |
-| Api | Microsoft.Extensions.ApiDescription.Server (PrivateAssets all) | 10.0.12 |
-| Api | Scalar.AspNetCore | 2.17.3 |
-| Infrastructure | AWSSDK.Extensions.NETCore.Setup | 4.0.101.3 |
-| Infrastructure | AWSSDK.CognitoIdentityProvider | 4.0.105.3 |
-| Infrastructure | MongoDB.Driver | 3.11.2 |
-| Infrastructure | Microsoft.Extensions.Configuration.Binder | 10.0.12 |
+| Api | Microsoft.AspNetCore.Authentication.JwtBearer | 10.0.14 |
+| Api | Microsoft.AspNetCore.OpenApi | 10.0.14 |
+| Api | Microsoft.Extensions.ApiDescription.Server (PrivateAssets all) | 10.0.14 |
+| Api | Scalar.AspNetCore | 2.19.0 |
+| Infrastructure | AWSSDK.Extensions.NETCore.Setup | 4.0.102.8 |
+| Infrastructure | AWSSDK.CognitoIdentityProvider | 4.0.106.7 |
+| Infrastructure | MongoDB.Driver | 3.13.0 |
+| Infrastructure | Microsoft.Extensions.Configuration.Binder | 10.0.14 |
 | AppHost | SDK `Aspire.AppHost.Sdk/13.6.4`, Aspire.Hosting.MongoDB | 13.6.4 |
 | Tests | Microsoft.NET.Test.Sdk 17.14.1, xunit 2.9.3, xunit.runner.visualstudio 3.1.4, NSubstitute 6.2.0, coverlet.collector 6.0.4 | |
 
-The required modules add `AWSSDK.SimpleEmailV2 4.0.105.1` and `AWSSDK.S3 4.0.103.2` to Infrastructure. Optional modules add their own packages (see `modules.md`).
+The required modules add `AWSSDK.SimpleEmailV2 4.0.106.8` and `AWSSDK.S3 4.0.104.9` to Infrastructure. Optional modules add their own packages (see `modules.md`).
 
 ## Project files
 

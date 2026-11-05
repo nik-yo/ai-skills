@@ -61,12 +61,13 @@ writing into it. If the current folder is inside a git repository (`git rev-pars
 app would be nested inside that repo. Keep `./<app>` as the default, and let the user pick another path.
 
 **Modules.** Every app includes the two required modules, **Email (SES)** and **Images (S3)**, without asking.
-The optional modules are **AI (Bedrock)**, **Maps & geocoding**, **Worker & queue (SQS)**, **Payments (Stripe)** and **Report & block**.
-Always ask about them, even when the other inputs were given. A question can offer at most 4 options, so use two multi-select
+The optional modules are **AI (Bedrock)**, **Maps & geocoding**, **Worker & queue (SQS)**, **Payments (Stripe)**, **Report & block**
+and **Push notifications (FCM)**. Always ask about them, even when the other inputs were given. A question can offer at most 4 options, so use two multi-select
 questions in the same AskUserQuestion call, each module with a short description: one for **AI, Maps & geocoding, Worker & queue**
-and one for **Payments, Report & block**. Don't merge modules into one option to make them fit.
+and one for **Payments, Report & block, Push notifications**. Don't merge modules into one option to make them fit.
 The answer form can't be submitted until every question has a selection, so make the modules optional: add a last option
-**None** ("Skip these modules") to each of the two questions. That keeps the first question at 4 options and the second at 3.
+**None** ("Skip these modules") to each of the two questions. That keeps both questions at 4 options.
+Push notifications is mobile only. If the user dropped both the Android and iOS layers, leave it out of the question.
 Say in each question's text that the modules are optional.
 Build only the ones the user picks. If the user picks None, skips the question or says none, build none from that question.
 If they pick None together with a module, build the module. Never add an optional module because it seems useful.

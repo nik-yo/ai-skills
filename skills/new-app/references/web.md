@@ -30,14 +30,14 @@ Run `corepack enable`, then `corepack use yarn@4` to write the `packageManager` 
 `.yarnrc.yml` contains `nodeLinker: node-modules`.
 
 Dependencies:
-- `@mantine/core ^9`, `@mantine/hooks ^9`, `@tabler/icons-react ^3.46.0`
-- `react ^19.2.7`, `react-dom ^19.2.7`, `react-router ^8`, `@react-router/node ^8`, `@react-router/serve ^8`, `isbot ^5.1.36`
+- `@mantine/core ^9`, `@mantine/hooks ^9`, `@tabler/icons-react ^3.50.0`
+- `react ^19.3.1`, `react-dom ^19.3.1`, `react-router ^8`, `@react-router/node ^8`, `@react-router/serve ^8`, `isbot ^5.2.2`
 - `axios ^1`, `oidc-client-ts ^3.5.0`, `react-oidc-context ^3.3.1`
 
 Dev dependencies:
-- `@react-router/dev ^8`, `typescript ^5.9.3`, `vite ^8.0.3`, `vitest ^5.0.1`, `jsdom ^30.1.1`, `@types/jsdom ^30`
+- `@react-router/dev ^8`, `typescript ^5.9.3`, `vite ^8.3.6`, `vitest ^5.1.0`, `jsdom ^30.1.1`, `@types/jsdom ^30`
 - `@testing-library/react ^16.3.3`, `@testing-library/dom ^10.4.2`, `@testing-library/jest-dom ^7.0.1`
-- `@types/node ^22`, `@types/react ^19.2.14`, `@types/react-dom ^19.2.3`
+- `@types/node ^24`, `@types/react ^19.3.0`, `@types/react-dom ^19.3.0`
 - `orval ^7`, `postcss ^8`, `postcss-preset-mantine ^1.18.0`, `postcss-simple-vars ^7`
 
 Scripts:

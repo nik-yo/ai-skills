@@ -1,6 +1,6 @@
 # iOS (SwiftUI, XcodeGen)
 
-A SwiftUI app targeting iOS 17 with no third-party dependencies. `project.yml` is the source of truth for the project, and the
+A SwiftUI app targeting iOS 17 with no third-party dependencies (the Push notifications module adds Firebase Messaging). `project.yml` is the source of truth for the project, and the
 `.xcodeproj` is generated from it and not committed. Config comes from xcconfig files through Info.plist. Sign-in is hand-written
 PKCE against Cognito managed login, run in an ephemeral `webAuthenticationSession`. Tokens are stored in the keychain.
 

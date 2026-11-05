@@ -15,6 +15,7 @@ Every module that stores user data also adds a step to `AccountDeletionService` 
 | [Worker & queue (SQS)](#worker--queue-sqs) | Optional | |
 | [Payments (Stripe)](#payments-stripe) | Optional | |
 | [Report & block](#report--block) | Optional | Builds on Email for the admin notices. Recommend it when users see each other's content |
+| [Push notifications (FCM)](#push-notifications-fcm) | Optional | Mobile only (Android and iOS). The web layer is unchanged |
 
 Build an optional module only if the user picked it in the module question (see `SKILL.md`).
 
@@ -22,7 +23,7 @@ Build an optional module only if the user picked it in the module question (see 
 
 ## Email (SES)
 
-- **API:** `IEmailNotificationService` in Domain, implemented as `SesEmailNotificationService` (`AWSSDK.SimpleEmailV2 4.0.105.1`). Register it with
+- **API:** `IEmailNotificationService` in Domain, implemented as `SesEmailNotificationService` (`AWSSDK.SimpleEmailV2 4.0.106.8`). Register it with
   `AddAWSService<IAmazonSimpleEmailServiceV2>()` and `AddEmailNotificationService(configuration)`. `EmailConfig` (section `Email`) has `FromAddress`
   (`no-reply@<domain>`) and `Enabled`. With `Enabled = false`, the service only logs messages, which keeps local dev free of SES.
 - **Core usage:** `UserService.LogUserAsync` sends a short welcome email the first time a user signs up, if the email is known. Wrap it in a try/catch
@@ -67,7 +68,7 @@ Build each of these only if the user picked it.
 
 ## AI (Bedrock)
 
-- **API:** `AWSSDK.BedrockRuntime 4.0.0.11`, registered with `AddAWSService<IAmazonBedrockRuntime>()`. `BedrockConfig` has `ModelId`, `PaidModelId` and `MaxTokens`.
+- **API:** `AWSSDK.BedrockRuntime 4.0.101.15`, registered with `AddAWSService<IAmazonBedrockRuntime>()`. `BedrockConfig` has `ModelId`, `PaidModelId` and `MaxTokens`.
   Use the Converse API with an image content block for image analysis. Moderation services (`IImageModerationService` and `ITextModerationService`) return
   allow or block with a reason. `ModerationConfig` has `Enabled` and `ModelId`, and `Enabled = false` skips moderation entirely in local dev.
 - Use the cross-region inference profile IDs (for example `us.amazon.nova-lite-v1:0`). **IAM:** the `us.*` profiles route to other regions, so allow the foundation model
@@ -95,7 +96,7 @@ Build each of these only if the user picked it.
 
 ## Worker & queue (SQS)
 
-- **API:** `AWSSDK.SQS 4.0.100.14`. Producers implement a Domain interface (`I<Thing>Queue`). For local dev, Program.cs swaps in an emulator:
+- **API:** `AWSSDK.SQS 4.0.100.23`. Producers implement a Domain interface (`I<Thing>Queue`). For local dev, Program.cs swaps in an emulator:
   ```csharp
   // Local dev (AppHost) points this at a local SQS-compatible emulator; everything else still uses real AWS.
   var localSqsServiceUrl = builder.Configuration["Sqs:LocalServiceUrl"];
@@ -108,9 +109,9 @@ Build each of these only if the user picked it.
       builder.Services.AddAWSService<IAmazonSQS>();
   }
   ```
-- **Worker project** (`<Company>.<App>.Worker`, an Exe with `PublishReadyToRun`): `Amazon.Lambda.Core 3.3.0`, `Amazon.Lambda.RuntimeSupport 2.2.2`,
+- **Worker project** (`<Company>.<App>.Worker`, an Exe with `PublishReadyToRun`): `Amazon.Lambda.Core 3.4.0`, `Amazon.Lambda.RuntimeSupport 2.3.0`,
   `Amazon.Lambda.Serialization.SystemTextJson 3.0.1`, `Amazon.Lambda.SQSEvents 3.0.1`, and Microsoft.Extensions Configuration.EnvironmentVariables, Configuration.UserSecrets,
-  DependencyInjection and Logging.Console `10.0.12`. It's a top-level program with no host builder, so configure it by hand: add user secrets only in Development, then environment
+  DependencyInjection and Logging.Console `10.0.14`. It's a top-level program with no host builder, so configure it by hand: add user secrets only in Development, then environment
   variables, then build a `ServiceCollection` with the same `AddDatabaseService`, repositories and services the API uses, then `EnsureDatabaseIndexes()`.
   - The handler returns `SQSBatchResponse` and adds each failed record to `BatchItemFailures`, so only failures are retried. Messages are delivered at least once,
     so make processing idempotent. A unique index on whatever the message creates is the simplest way.
@@ -134,7 +135,7 @@ Build each of these only if the user picked it.
 
 ## Payments (Stripe)
 
-- **API:** `Stripe.net 53.0.0`. `IPaymentGatewayService` is implemented by `StripePaymentGatewayService`. `StripeConfig` has `SecretKey`, `WebhookSecret`, one price ID per paid plan, and `AppBaseUrl`.
+- **API:** `Stripe.net 53.1.0`. `IPaymentGatewayService` is implemented by `StripePaymentGatewayService`. `StripeConfig` has `SecretKey`, `WebhookSecret`, one price ID per paid plan, and `AppBaseUrl`.
   `User` gets `Plan` (a `PlanType` enum, default `Free`), `PaymentCustomerId` and `Subscription`, written only through a dedicated `UpdateBillingAsync` repository method.
   - Create the Stripe customer in `POST /users` inside a try/catch that only logs. A payment outage shouldn't block sign-in, and the customer gets created on a later login or at checkout.
   - Index: a unique index on `PaymentCustomerId` with a **partial** filter (`Filter.Type(d => d.PaymentCustomerId, BsonType.String)`), because users without a customer store an explicit
@@ -159,3 +160,109 @@ App stores require this for apps where users see each other's content.
   filters out blocked authors. Return null instead of an empty list when nobody is blocked, so queries skip the filter.
 - **Clients:** an overflow menu on every piece of user content, with Report (a reason picker) and Block user (with a confirmation), plus a Blocked users list in Account where users can unblock.
 - **Deletion:** delete the user's reports and remove them from everyone's block lists.
+
+## Push notifications (FCM)
+
+Firebase Cloud Messaging delivers to both apps: FCM sends to Android directly and to iOS through APNs, so the API has a single sender and a single token format.
+The web layer doesn't change. Both apps build and run with the Firebase values left empty. Push is then off, which keeps fresh clones and CI green before the Firebase project exists.
+
+- **API:**
+  - `FirebaseAdmin 3.7.0` and `AWSSDK.SimpleSystemsManagement 4.0.104.9` in Infrastructure. Domain has `IPushNotificationService.SendToUserAsync(userId, PushMessage)`
+    (`PushMessage { Title, Body, IDictionary<string, string>? Data }`), implemented by `FcmPushNotificationService`, plus a `LoggingPushNotificationService` that
+    only logs. `PushConfig` (section `Push`) has `Enabled`, `ServiceAccountJson` (local dev only, from user secrets) and `ServiceAccountParameter` (an SSM path, used in Lambda).
+    `AddPushNotificationService(configuration)` registers the logging service when `Enabled = false`, which is the Development default, so local dev needs no Firebase.
+  - **Credentials:** don't pass the service account JSON as a Lambda env var. Lambda allows 4 KB for all env vars together, and the key alone is about 2.3 KB.
+    When `ServiceAccountJson` is empty, read `ServiceAccountParameter` once with `GetParameterAsync` (`WithDecryption = true`), and create one `FirebaseApp` for the process
+    (a singleton, because `FirebaseApp.Create` throws if the default app already exists). Load the key with `CredentialFactory.FromJson<ServiceAccountCredential>(json).ToGoogleCredential()`.
+    `GoogleCredential.FromJson` is obsolete in the `Google.Apis.Auth` that FirebaseAdmin pulls in, and its warning fails the no-warnings gate.
+  - **Devices:** a `Device` entity (`UserId`, `Token`, `Platform` as a `DevicePlatform` enum `Android` / `Ios`, `CreatedAt`, `LastSeenAt`) with a unique index on `Token` and an index on `UserId`.
+    `PUT /users/me/devices` (`DeviceRegistrationRequest { Token, Platform }`) upserts by token and sets `UserId` to the caller. One phone can switch accounts, so the token moves to
+    whoever signed in last, and the previous user stops getting that phone's notifications. `DELETE /users/me/devices?token=` removes a token only if it belongs to the caller.
+    The token goes in the query string because FCM tokens are long and contain `:`, and a DELETE body is poorly supported by Retrofit and `URLSession`.
+  - **Sending:** `SendEachForMulticastAsync` in batches of up to 500 tokens. Set `AndroidConfig { Priority = High, Notification.ChannelId = "default" }` and
+    `ApnsConfig { Aps = { Sound = "default" } }`. For each failed response whose `MessagingErrorCode` is `Unregistered` or `SenderIdMismatch`, delete that device.
+    Those tokens will never work again, and FCM asks senders to drop them. Leave other errors alone. A send failure must never fail the request that caused it, so log it and continue.
+    With the Worker module, send from the worker instead, so the API request doesn't wait on FCM.
+  - **Core usage:** `POST /users/me/devices/test` sends "Notifications are working" to the caller's devices and returns 204, or 409 when the caller has no device registered.
+    The apps' Notifications row calls it, which lets someone check the whole chain on a real device. Real features call `IPushNotificationService` from their services in the same way.
+  - **Deletion:** delete the user's devices.
+  - **Tests:** the token-reassignment upsert, the delete-only-your-own rule, and the removal of `Unregistered` tokens (with the FCM sender behind a substitute).
+- **Android:**
+  - Catalog: `firebaseBom = "35.1.0"`, `firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }`,
+    `firebase-messaging = { module = "com.google.firebase:firebase-messaging" }` and
+    `kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "coroutines" }` (for `.await()` on the token task).
+    Add `implementation(platform(libs.firebase.bom))`, `implementation(libs.firebase.messaging)` and `implementation(libs.kotlinx.coroutines.play.services)`.
+  - **Don't apply the `com.google.gms.google-services` plugin.** It fails the build when `app/google-services.json` is missing, which breaks every fresh clone and CI run until
+    someone downloads the file. Read the four values from gradle properties instead, and initialize Firebase by hand. In `gradle.properties`:
+    ```properties
+    # Firebase (Push module). From the Android app's google-services.json in the Firebase console. These are public identifiers that ship in
+    # the app, so they can be committed. Restrict the API key to this package in Google Cloud. Leave them empty to build with push off.
+    <app>.firebaseProjectId=
+    <app>.firebaseApplicationId=
+    <app>.firebaseApiKey=
+    <app>.firebaseSenderId=
+    ```
+    Pass each one to `BuildConfig` with `buildConfigField("String", "FIREBASE_PROJECT_ID", "\"${<app>Property("firebaseProjectId")}\"")` and so on.
+    `<App>Application.onCreate` calls `FirebaseApp.initializeApp(this, FirebaseOptions.Builder().setProjectId(...).setApplicationId(...).setApiKey(...).setGcmSenderId(...).build())`
+    only when all four are non-empty, and `PushConfig.isConfigured` exposes that. Check it before every `FirebaseMessaging.getInstance()` call, which throws when no app was initialized.
+    Without `google-services.json`, Firebase's init provider logs that it couldn't initialize. That message is expected and harmless.
+  - **Manifest:** the `android.permission.POST_NOTIFICATIONS` permission, and inside `<application>`:
+    ```xml
+    <service
+        android:name=".push.<App>MessagingService"
+        android:exported="false">
+        <intent-filter>
+            <action android:name="com.google.firebase.MESSAGING_EVENT" />
+        </intent-filter>
+    </service>
+    <!-- Used when the system shows a notification while the app is in the background. The launcher icon would show as a white square,
+         so the small icon is a monochrome vector. -->
+    <meta-data
+        android:name="com.google.firebase.messaging.default_notification_icon"
+        android:resource="@drawable/ic_stat_notification" />
+    <meta-data
+        android:name="com.google.firebase.messaging.default_notification_channel_id"
+        android:value="default" />
+    ```
+    Add `res/drawable/ic_stat_notification.xml` (a white vector on transparent) and create the `default` channel (`NotificationManagerCompat`, default importance,
+    named from `R.string.notification_channel_default`) in `<App>Application.onCreate`.
+  - `<App>MessagingService : FirebaseMessagingService`: `onNewToken` registers the token with the API when the user is signed in, on an application-scope coroutine.
+    FCM doesn't display notification messages while the app is in the foreground, so `onMessageReceived` builds a `NotificationCompat` on the `default` channel itself, with a
+    `PendingIntent` (`FLAG_IMMUTABLE`) to `MainActivity` carrying the data payload.
+  - `PushRepository` registers `FirebaseMessaging.getInstance().token.await()` with `PUT users/me/devices` once for each `sub`, next to `logUser()`. That runs on every app start,
+    so `LastSeenAt` stays current. Sign-out first calls `DELETE users/me/devices` for the current token, with a short timeout and its errors ignored, so a network failure never
+    blocks sign-out, and only then clears the auth state, because the call needs the access token.
+  - `MainActivity` is `singleTask`, so a notification tap arrives in `onNewIntent` when the app is already running. Read the data extras in both `onCreate` and `onNewIntent`.
+  - **Permission:** on Android 13+, request `POST_NOTIFICATIONS` with `rememberLauncherForActivityResult` the first time the main screen shows. Account gets a Notifications row that
+    shows whether notifications are on, opens `Settings.ACTION_APP_NOTIFICATION_SETTINGS` when they're off, and has a Send test notification button.
+  - Push needs an emulator image with Google Play services. Say so in the README.
+- **iOS:** this module adds the app's only third-party dependency.
+  - `project.yml`:
+    ```yaml
+    packages:
+      Firebase:
+        url: https://github.com/firebase/firebase-ios-sdk
+        from: 13.1.1
+    ```
+    Under the `<App>` target, add `dependencies: [{ package: Firebase, product: FirebaseMessaging }]` and
+    `entitlements: { path: <App>/<App>.entitlements, properties: { aps-environment: development } }`. Keep `development`. The App Store export switches it to production when it re-signs.
+  - **Info.plist:** `UIBackgroundModes` = [`remote-notification`], `FirebaseAppDelegateProxyEnabled` = false (the delegate below forwards the APNs token itself, and swizzling
+    misses the SwiftUI app lifecycle), and the config keys `<App>FirebaseProjectID`, `<App>FirebaseAppID`, `<App>FirebaseAPIKey` and `<App>FirebaseSenderID`, set from
+    `<APP>_FIREBASE_*` variables in `Shared.xcconfig`. The values come from the iOS app's `GoogleService-Info.plist`, which is not added to the project. They're public identifiers,
+    so commit them, and leave them empty to build with push off. `AppConfig` reads them as optional, not with the `fatalError` used for required keys.
+  - `AppDelegate` (`UIApplicationDelegate`, `UNUserNotificationCenterDelegate`, `MessagingDelegate`), attached with `@UIApplicationDelegateAdaptor` in `<App>App`:
+    - `didFinishLaunching`: when the config is present, `FirebaseApp.configure(options:)` with a `FirebaseOptions(googleAppID:gcmSenderID:)` that also sets `apiKey` and `projectID`.
+      Then set `Messaging.messaging().delegate` and `UNUserNotificationCenter.current().delegate`, and call `UIApplication.shared.registerForRemoteNotifications()`.
+    - `didRegisterForRemoteNotificationsWithDeviceToken` sets `Messaging.messaging().apnsToken = deviceToken`. Take the FCM token only from
+      `messaging(_:didReceiveRegistrationToken:)`. Asking for it with `Messaging.messaging().token()` before the APNs token arrives fails with "No APNS token specified".
+    - `willPresent` returns `[.banner, .sound, .list]`, because iOS hides notifications while the app is in the foreground. `didReceive` hands the payload to the app for routing.
+  - `PushRegistrar` (`@MainActor @Observable`, in `AppContainer`) keeps the latest FCM token and registers it with `PUT users/me/devices` once it has both a token and a signed-in user,
+    so it works whichever arrives first. `MainTabView` triggers it next to `logUser()`. Sign-out unregisters the token first, with errors ignored, as on Android.
+  - **Permission:** `requestAuthorization(options: [.alert, .sound, .badge])` the first time `MainTabView` shows. Account gets the same Notifications row as Android, opening
+    `UIApplication.openNotificationSettingsURLString` when notifications are off.
+  - Test on a real device. Remote pushes to the simulator aren't reliable enough to verify FCM delivery.
+- **Infra:** add `/<app>/push/fcm-service-account` to `<app>-params.yml`. Its comment says to set it with `--value file://<key>.json`, which keeps the private key's line breaks.
+  The key is about 2.3 KB, which fits the 4 KB Standard tier. On the API function, set `Push__Enabled: 'true'` and `Push__ServiceAccountParameter: '/<app>/push/fcm-service-account'`,
+  and add the policy `SSMParameterReadPolicy: { ParameterName: '<app>/push/*' }` (SAM adds the leading slash).
+  If the Worker module sends pushes, give the worker the same settings and policy.
+- **Setup:** see SETUP.md. It needs a Firebase project with both apps, an APNs auth key uploaded to Firebase, and a service account key in SSM.
