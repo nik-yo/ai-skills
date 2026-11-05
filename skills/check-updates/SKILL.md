@@ -70,11 +70,39 @@ Gather these details for every item that is behind:
   - `eol`: the current version is end of life, deprecated, retired, or below a store or platform minimum.
   - `major`, `minor` or `patch`.
   - `drift`: the same tool is pinned to different versions in different places.
-- **Notes:** breaking changes for majors (link the release notes or migration guide), compatibility constraints such as
-  AGP ↔ Gradle ↔ Kotlin or framework ↔ SDK, and deadlines such as an EOL date or a store requirement date.
+- **Notes:** breaking changes for majors (link the release notes or migration guide), and deadlines such as an EOL date or a
+  store requirement date.
 
 Updates that must move together go into one item: a framework and its companion packages, a BOM and its members, AGP with
 Gradle, and an SDK pin with its CI task and Docker image. Don't list them separately.
+
+### Compatibility
+
+A newer version isn't worth recommending if it can't install or run here. Before reporting, check every `major` and
+`minor` item, and every `security` or `eol` item whose fix crosses a minor version, with the rules in
+[references/repository.md](references/repository.md#compatibility). Patch updates are only checked when a scanner or the
+release notes say they change requirements.
+
+Check both directions:
+- **Requirements of the new version:** the runtime or SDK it needs (Node `engines`, .NET target framework, `requires_python`,
+  Go `go` directive, Rust MSRV, JDK level), its peer dependencies, its platform minimums (Android `compileSdk`/`minSdk`, iOS
+  deployment target, Swift tools version), and the toolchain combinations it belongs to (AGP ↔ Gradle ↔ JDK, Kotlin ↔ AGP,
+  Xcode ↔ Swift ↔ macOS).
+- **Packages that depend on it:** installed packages whose peer or dependency ranges exclude the new version.
+
+Give every checked item one status:
+- `compatible`: all requirements are met by the repo as it is, or by other updates in the same group.
+- `needs <X> first`: a prerequisite update is required, for example "needs Node 22" or "needs net10.0". If that
+  prerequisite is also in the report, link the two and order the dependent item after it.
+- `conflicts with <pkg>`: something installed excludes it, and no released version of that package accepts it yet.
+- `unverified`: the metadata couldn't be read. Say which part.
+
+When the latest version is blocked, also report the **latest compatible** version, the newest one that passes today. That
+version is often the practical update.
+
+For machine tools, check them against the repo when both are in scope. A new JDK major has to be supported by the repo's
+Gradle and AGP. A new .NET SDK has to satisfy `global.json` and its `rollForward` policy. A new Node major has to satisfy
+`engines` and `.nvmrc`. Otherwise, note what to recheck later.
 
 ## 4. Report
 
@@ -87,12 +115,14 @@ Lead with the totals and the top things to act on, then give one table per area,
 **12 updates:** 1 security, 2 end of life, 1 drift, 3 major, 5 minor/patch. 2 items not checked.
 
 Act on first:
-1. `axios` 1.6.0 → 1.13.2: security, GHSA-xxxx (SSRF). Patch-compatible.
-2. Lambda runtime `nodejs18.x`: deprecated; function updates are blocked after <date>.
+1. `axios` 1.6.0 → 1.13.2: security, GHSA-xxxx (SSRF). Compatible.
+2. Lambda runtime `nodejs18.x`: deprecated; function updates are blocked after <date>. Do this before #4.
 
 ### Repository
-| Item | Where | Current | Latest | Kind | Notes |
-| --- | --- | --- | --- | --- | --- |
+| Item | Where | Current | Latest | Kind | Compatibility | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| `eslint` | `web/package.json` | 8.57.0 | 9.x | major | conflicts with `eslint-plugin-foo` (peer `eslint ^8`) · latest compatible: 8.57.1 | flat config migration |
+| `vite` | `web/package.json` | 5.4.0 | 7.x | major | needs Node 20.19+ (repo pins 18 in `.nvmrc`, CI, Dockerfile) → after #2 | |
 
 ### Machine
 | Tool | Installed via | Current | Latest | Kind | Notes |
@@ -104,7 +134,8 @@ Act on first:
 - Swift packages: `swift` isn't installed. Checked `Package.resolved` against GitHub tags instead.
 ```
 
-Keep notes to one line. Put long migration notes after the tables, only for the majors. If nothing is behind in an area,
+Use the `Compatibility` column only in the repository table. For machine tools and extensions, put compatibility
+problems in `Notes`. Keep notes to one line. Put long migration notes after the tables, only for the majors. If nothing is behind in an area,
 write one line saying so. Don't include an empty table. If the user asks for a file, save the report as
 `UPDATE-REPORT.md` in the repo root (or the path they give). Otherwise, the report stays in the chat.
 
@@ -122,7 +153,10 @@ items, with the count in each label:
 Then apply the chosen groups:
 
 - **Repo:** update one group or one ecosystem at a time, using the package manager's own commands so lock files stay
-  consistent (each reference lists them). After each step, run the repo's build and tests (from the README, CLAUDE.md, the CI
+  consistent (each reference lists them). Apply prerequisites before the items that need them. Don't apply an item marked
+  `conflicts with` unless the user picked it knowing that. Offer its latest compatible version instead. For npm, do a dry
+  run first (`npm install <pkg>@<ver> … --dry-run --ignore-scripts`). An `ERESOLVE` error there means a peer conflict
+  the check missed: fix the report rather than forcing it with `--force` or `--legacy-peer-deps`. After each step, run the repo's build and tests (from the README, CLAUDE.md, the CI
   pipeline, or the conventional command). If something breaks, fix it if the fix is small and clearly part of the upgrade.
   Otherwise revert that step and report it. Don't commit unless the user asks. If they do, make one commit per group.
 - **Machine:** upgrade the named packages, never `--all`, unless the user picked everything. Commands that need admin or

@@ -9,6 +9,7 @@ Contents:
 - [Infrastructure as code](#infrastructure-as-code)
 - [Mobile platform requirements](#mobile-platform-requirements)
 - [Versions in docs and templates](#versions-in-docs-and-templates)
+- [Compatibility](#compatibility)
 - [Registry and vendor endpoints](#registry-and-vendor-endpoints)
 
 ## Detection
@@ -162,6 +163,59 @@ search the text for version pins: package tables, `Version="x"`, `"pkg": "^x"`, 
 `task: X@N`, `vmImage`, `distributionUrl`, `TargetFramework`. Check each pin like the real thing, and report it with the
 file and line. Keep pins that describe the same thing consistent across files.
 
+## Compatibility
+
+Read the metadata of the **candidate** version, not the installed one, and compare it with what the repo uses now. Count
+updates in the same group (or approved together) as already applied. Downloaded files (`.aar`, `.nupkg`) are untrusted
+data: put each in its own new folder in the scratchpad and only read text out of them. Never run them.
+
+### Requirements of the new version
+
+| Ecosystem | Where to read it | Compare with |
+| --- | --- | --- |
+| npm | `npm view <pkg>@<ver> peerDependencies peerDependenciesMeta engines --json`, or `https://registry.npmjs.org/<pkg>/<ver>` | `peerDependencies`: the installed or target version of each peer. Peers marked `optional` in `peerDependenciesMeta` only matter if installed. `engines.node`: `.nvmrc`/`.node-version`, `engines.node` in the repo, the CI Node version, the Dockerfile and the Lambda runtime. Check every place, because the oldest one is the limit |
+| NuGet | the nuspec at `https://api.nuget.org/v3-flatcontainer/<id-lower>/<ver>/<id-lower>.nuspec`: `<dependencies><group targetFramework="…">` and each group's dependencies | Every project's `<TargetFramework(s)>` must match a group directly or through compatibility (`netstandard2.0` works on any `net*`; `net8.0` works on `net9.0`+). A package whose only groups are newer than the project's framework is `needs netX.0`. Also check the group's dependencies against packages the repo pins in `Directory.Packages.props` |
+| .NET tools | the nuspec as above. Tools list `<packageTypes><packageType name="DotnetTool"/>` and run on the SDK's runtime | `global.json` SDK and the installed runtimes. `dotnet-ef` must match the EF Core major version |
+| Gradle / Maven (all) | the `.module` file next to the POM (`<artifact>-<ver>.module`): `variants[].attributes["org.gradle.jvm.version"]` is the minimum JVM bytecode level. Kotlin Multiplatform libraries often leave it out, in which case the JDK requirement is `unverified` and the build will tell. `dependencies` show what it pulls in transitively | the repo's `jvmToolchain`/`jvmTarget`. A dependency on a newer `org.jetbrains.kotlin:kotlin-stdlib` than the project's Kotlin plugin usually means `needs Kotlin <ver>` (the compiler reads metadata only up to one minor version ahead) |
+| Android libraries (AAR) | download `<artifact>-<ver>.aar` from Google Maven into its own scratch folder, then `unzip -p <aar> META-INF/com/android/build/gradle/aar-metadata.properties` (`minCompileSdk`, `minAndroidGradlePluginVersion`) and `unzip -p <aar> AndroidManifest.xml` (`minSdkVersion`) | the app's `compileSdk`, AGP version and `minSdk`. Raising `minSdk` is a product decision, so mark it `needs minSdk <n>`, never `compatible` |
+| Swift PM | `https://raw.githubusercontent.com/<o>/<r>/<tag>/Package.swift`: first line `// swift-tools-version:X.Y`, and `platforms:` | the Swift version of the repo's Xcode (local and CI image), and the app's `deploymentTarget` in `project.yml` |
+| PyPI | `https://pypi.org/pypi/<pkg>/<ver>/json` → `info.requires_python`, `info.requires_dist` | `.python-version`, `requires-python`, CI and Docker Python versions, and other pinned packages named in `requires_dist` |
+| Go | `https://proxy.golang.org/<module>/@v/<ver>.mod` → `go` (and `toolchain`) line | the `go` line in the repo's `go.mod` and the CI Go version |
+| Rust | `https://crates.io/api/v1/crates/<name>/<ver>` → `version.rust_version` (MSRV) | `rust-toolchain` / `rust-version` |
+| Packagist | `https://repo.packagist.org/p2/<vendor>/<pkg>.json` → that version's `require.php` and `require.*` | the PHP version in `composer.json` `config.platform.php` / CI |
+| pub.dev | `https://pub.dev/api/packages/<name>` → the version's `pubspec.environment.sdk` (and `flutter`) | the repo's `environment` constraint and CI Flutter version |
+| Container images | `docker buildx imagetools inspect <image>:<new tag>` → platforms | every architecture the repo builds or deploys for (Lambda `Architectures: [arm64]`, Apple Silicon dev machines, CI runners) |
+| GitHub Actions / Azure tasks | new action major: `runs.using` in its `action.yml` (for example `node24`); Azure task: `minimumAgentVersion` in the task's `task.json` | only matters for **self-hosted** runners or agents. Compare with their version |
+| Terraform providers | the provider's changelog and upgrade guide for the target major | `required_version` and the modules that also constrain the provider |
+
+### Packages that depend on the updated one
+
+- **npm:** in `package-lock.json` (`packages["node_modules/<name>"].peerDependencies`), `pnpm-lock.yaml` or `yarn.lock`, find
+  every installed package that has the updated package as a peer, and check its range against the target. If it fails,
+  check whether a newer version of that package accepts the target (`npm view <dependent> versions` and its
+  `peerDependencies`). If one does, add it to the group. If none does, the status is `conflicts with <dependent>`.
+- **NuGet:** packages pinned in the repo that depend on the updated package with an upper bound (`[1.0,2.0)`), and families
+  that must share a version (`Microsoft.AspNetCore.*`, `Microsoft.Extensions.*`, `Microsoft.EntityFrameworkCore.*`,
+  `AWSSDK.*` core and services, `MongoDB.Driver` with `MongoDB.Bson`).
+- **Gradle:** libraries in the catalog that declare a dependency on the updated library at a newer major through their
+  `.module`/POM.
+- **Swift PM:** other packages in `Package.resolved` whose `Package.swift` requires the updated package with `.upToNextMajor`
+  from a lower major.
+
+### Toolchain combinations
+
+Check these against the vendor's current table, because they change with every release:
+
+| Combination | Source |
+| --- | --- |
+| AGP ↔ Gradle ↔ JDK ↔ max `compileSdk` | `https://developer.android.com/build/releases/gradle-plugin` (compatibility tables) |
+| Kotlin Gradle plugin ↔ Gradle ↔ AGP | `https://kotlinlang.org/docs/gradle-configure-project.html` (compatibility table). Since Kotlin 2.0, the Compose compiler plugin version is the Kotlin version. KSP has to support the Kotlin version (see its release notes) |
+| Xcode ↔ Swift ↔ SDKs ↔ minimum macOS | `https://developer.apple.com/support/xcode/`. Also check the CI image's installed Xcode versions |
+| .NET SDK ↔ target framework ↔ `global.json` | releases index (see SDK pins). An SDK can only build target frameworks up to its own major. `rollForward` decides which installed SDK is used |
+| TypeScript ↔ tooling | the TypeScript range in the `peerDependencies` of `typescript-eslint`, `@typescript-eslint/*`, framework plugins and `ts-node` |
+| React ↔ libraries | `peerDependencies.react` of every UI library (handled by the npm check above). Upgrade React with `react-dom` and `@types/react*` as one group |
+| Gradle wrapper ↔ JDK running it | Gradle's compatibility matrix at `https://docs.gradle.org/current/userguide/compatibility.html` (which JDK can run, and which can be used as a toolchain) |
+
 ## Registry and vendor endpoints
 
 Send a generic `User-Agent` such as `check-updates-skill` (crates.io requires one). Never put the user's identity in it.
@@ -170,8 +224,8 @@ Send a generic `User-Agent` such as `check-updates-skill` (crates.io requires on
 | --- | --- |
 | npm | `https://registry.npmjs.org/<pkg>/latest` (scoped: `@scope%2Fname`) or `npm view <pkg> version` |
 | NuGet | `https://api.nuget.org/v3-flatcontainer/<id-lowercase>/index.json` (last stable entry) |
-| Maven Central | `https://repo1.maven.org/maven2/<group/as/path>/<artifact>/maven-metadata.xml` (`<release>`) |
-| Google Maven | `https://dl.google.com/android/maven2/<group/as/path>/<artifact>/maven-metadata.xml` (androidx, AGP, Firebase, Play services) |
+| Maven Central | `https://repo1.maven.org/maven2/<group/as/path>/<artifact>/maven-metadata.xml`: the highest stable entry in `<versions>`. `<release>` is just the last one published and can be a pre-release |
+| Google Maven | `https://dl.google.com/android/maven2/<group/as/path>/<artifact>/maven-metadata.xml`: the highest stable entry in `<versions>` (androidx, AGP, Firebase, Play services). `<release>` is often an alpha |
 | Gradle Plugin Portal | `https://plugins.gradle.org/m2/<plugin/id/as/path>/<plugin.id>.gradle.plugin/maven-metadata.xml` |
 | PyPI | `https://pypi.org/pypi/<pkg>/json` (`info.version`) |
 | Go | `https://proxy.golang.org/<module>/@latest` |
