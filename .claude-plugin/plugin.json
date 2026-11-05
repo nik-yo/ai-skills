@@ -1,7 +1,7 @@
 {
   "name": "ai-skills",
-  "version": "1.1.0",
-  "description": "Skills for Claude Code, including new-app: scaffold a new multi-platform product on our standard stack.",
+  "version": "1.2.0",
+  "description": "Skills for Claude Code: new-app scaffolds a new multi-platform product on our standard stack; check-updates audits outdated packages, SDKs, CI tasks, images, machine tools and VS Code extensions.",
   "author": {
     "name": "nik-yo"
   }

@@ -8,7 +8,7 @@
     {
       "name": "ai-skills",
       "source": "./",
-      "description": "Skills for Claude Code, including new-app: scaffold a new multi-platform product on our standard stack."
+      "description": "Skills for Claude Code: new-app scaffolds a new multi-platform product on our standard stack; check-updates audits outdated packages, SDKs, CI tasks, images, machine tools and VS Code extensions."
     }
   ]
 }
