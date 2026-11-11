@@ -1,7 +1,7 @@
 {
   "name": "ai-skills",
-  "version": "1.4.0",
-  "description": "Skills for Claude Code: new-app scaffolds a new multi-platform product on our standard stack; check-updates audits outdated packages, SDKs, CI tasks, images, machine tools and VS Code extensions; security-scan finds vulnerable dependencies and images, leaked secrets, insecure IaC and CI, and vulnerable code.",
+  "version": "1.5.0",
+  "description": "Skills for Claude Code: new-app scaffolds a new multi-platform product on our standard stack; check-updates audits outdated packages, SDKs, CI tasks, images, machine tools and VS Code extensions; security-scan finds vulnerable dependencies and images, leaked secrets, insecure IaC and CI, and vulnerable code. check-news gathers recent news, releases, advisories and deprecations for the technologies a repo uses.",
   "author": {
     "name": "nik-yo"
   }
