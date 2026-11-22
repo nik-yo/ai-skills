@@ -145,7 +145,7 @@ Build each of these only if the user picked it.
     It updates the plan from subscription events. It needs its own event with `Auth: { Authorizer: NONE }` in `<app>-api.yml`.
   - Plan limits throw `PlanLimitExceededException`, which endpoints turn into a 403 with a message that tells the user to upgrade.
   - Account deletion deletes the Stripe customer **first**, so a deleted account can never be charged again.
-- **Web:** a public `/plans` page comparing plans, and `/manage/billing` showing the current plan with Upgrade (Checkout) and Manage (Portal) buttons that redirect to the returned URL.
+- **Web:** a public `/plans` page comparing plans, and `/billing` showing the current plan with Upgrade (Checkout) and Manage (Portal) buttons that redirect to the returned URL.
 - **Mobile:** a Billing screen that opens the web billing page in a Custom Tab or Safari. The apps never sell anything in-app. Note in SETUP.md that App Store review may require the
   external-purchase link entitlement or StoreKit instead.
 

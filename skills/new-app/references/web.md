@@ -338,7 +338,7 @@ Components revoke the object URL when they unmount or the path changes.
 
 ```ts
 // app/routes.ts
-import { type RouteConfig, index, layout, prefix, route } from "@react-router/dev/routes";
+import { type RouteConfig, index, layout, route } from "@react-router/dev/routes";
 
 export default [
   index("routes/home.tsx"),
@@ -348,23 +348,21 @@ export default [
   route("signup", "routes/signup.tsx"),
   route("logout", "routes/logout.tsx"),
   layout("routes/authn-required/layout.tsx", [
-    ...prefix("manage", [
-      index("routes/authn-required/manage/dashboard.tsx"),
-      route("profile", "routes/authn-required/manage/profile.tsx"),
-    ]),
+    route("dashboard", "routes/authn-required/dashboard.tsx"),
+    route("profile", "routes/authn-required/profile.tsx"),
   ]),
 ] satisfies RouteConfig;
 ```
 
 | Route | Content |
 | --- | --- |
-| `home` | Public landing page: the app name, a placeholder one-line pitch, and Sign in / Sign up buttons. Signed-in users go to `/manage` |
+| `home` | Public landing page: the app name, a placeholder one-line pitch, and Sign in / Sign up buttons. Signed-in users go to `/dashboard` |
 | `privacy`, `terms` | Public placeholder pages with a visible `TODO: legal review` banner. The app stores need them reachable without signing in |
 | `delete-account` | Public page explaining how to delete the account (Google Play requires a public URL), with a link into Profile for signed-in users |
 | `signup` | Calls `cognitoSignUpRedirect` |
 | `logout` | `auth.removeUser()`, then `cognitoSignOutRedirect` |
-| `manage/dashboard` | A placeholder welcome page for features to grow into |
-| `manage/profile` | Shows the email, edits the name (`PUT /users/me`), and deletes the account (`DELETE /users/me` after a confirm modal, then logs out) |
+| `dashboard` | A placeholder welcome page for features to grow into |
+| `profile` | Shows the email, edits the name (`PUT /users/me`), and deletes the account (`DELETE /users/me` after a confirm modal, then logs out) |
 
 `routes/authn-required/layout.tsx` is wrapped in `withAuthenticationRequired` from `react-oidc-context`, which redirects to sign-in and calls
 `rememberReturnTo` first. It does this:
@@ -385,7 +383,7 @@ VITE_REGION=<region>
 VITE_USER_POOL_ID=
 VITE_COGNITO_DOMAIN=<app>.auth.<region>.amazoncognito.com
 VITE_CLIENT_ID=
-VITE_REDIRECT_URI=http://localhost:5173/manage
+VITE_REDIRECT_URI=http://localhost:5173/dashboard
 VITE_LOGOUT_URI=http://localhost:5173
 VITE_API_URL=http://localhost:5142
 ```

@@ -281,7 +281,7 @@ Then add three app clients. Each one is an `AWS::Cognito::UserPoolClient` with `
 
 | Client | ClientName | AccessTokenValidity (hours) | CallbackURLs | LogoutURLs | Extra |
 | --- | --- | --- | --- | --- | --- |
-| Web | `<app>` | 1 | `http://localhost:5173/manage`, `https://<domain>/manage` | `http://localhost:5173`, `https://<domain>` | `DefaultRedirectURI: https://<domain>/manage` |
+| Web | `<app>` | 1 | `http://localhost:5173/dashboard`, `https://<domain>/dashboard` | `http://localhost:5173`, `https://<domain>` | `DefaultRedirectURI: https://<domain>/dashboard` |
 | Android | `<app>-android` | 12 | `com.<company>.<app>://callback` | `com.<company>.<app>://signout` | `EnableTokenRevocation: true` |
 | iOS | `<app>-ios` | 12 | `com.<company>.<app>://callback` | `com.<company>.<app>://signout` | `EnableTokenRevocation: true` |
 
