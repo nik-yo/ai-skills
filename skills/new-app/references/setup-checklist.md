@@ -22,8 +22,8 @@ Follow the order in `infrastructure/README.md`. The steps that need you:
       and a Sign in with Apple key. Store the services ID, team ID, key ID and the .p8 (as `file://`) in `/<app>/auth/apple/*`.
 
 ## 4. Local development
-- [ ] API: `dotnet user-secrets` for `Auth:Authority`, `Auth:ClientIds:0..2`, `Auth:SecureAllEndpoints=true`, `Cors:Origins:0=http://localhost:5173`, and
-      `Database:ConnectionString` (the Aspire Mongo container's connection string, from the dashboard).
+- [ ] API: `dotnet user-secrets` for `Auth:Authority`, `Auth:ClientIds:0..2`, `Auth:SecureAllEndpoints=true` and `Cors:Origins:0=http://localhost:5173`.
+      No database secret is needed: the AppHost passes the Mongo container's connection string as `Database__ConnectionString`.
 - [ ] Web: copy `.env.example` to `.env.local` and fill it in.
 - [ ] Android: set the `<app>.*` values in `~/.gradle/gradle.properties`, and run `adb reverse tcp:5142 tcp:5142` to reach the local API from a device or emulator.
 - [ ] iOS: copy `Config/Local.xcconfig.example` to `Config/Local.xcconfig` and set `DEVELOPMENT_TEAM`.

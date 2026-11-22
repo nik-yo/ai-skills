@@ -210,8 +210,9 @@ app.Run();
 
 `AuthConfig` (in `Infrastructure/Configurations`, section `Auth`) has `string Authority`, `IEnumerable<string> ClientIds` and
 `bool SecureAllEndpoints = false`. `Authority` is `https://cognito-idp.<region>.amazonaws.com/<userPoolId>`.
-Development user secrets set `Auth:Authority`, `Auth:ClientIds:0..2` (in lowercase), `Auth:SecureAllEndpoints=true`,
-`Cors:Origins:0=http://localhost:5173` and `Database:ConnectionString`.
+Development user secrets set `Auth:Authority`, `Auth:ClientIds:0..2` (in lowercase), `Auth:SecureAllEndpoints=true`
+and `Cors:Origins:0=http://localhost:5173`. `Database:ConnectionString` isn't a user secret: the AppHost injects it as the
+`Database__ConnectionString` environment variable.
 
 ## Domain: models and repositories
 
@@ -461,24 +462,18 @@ both with `ASPNETCORE_ENVIRONMENT=Development` and `launchBrowser: false`. The m
 AppHost:
 
 ```csharp
-using System.Net.Sockets;
-
 var builder = DistributedApplication.CreateBuilder(args);
 
-// Fixed port so the connection string in the Api's user secrets stays valid; persistent so data survives restarts.
+// Aspire picks the port; persistent so data survives restarts.
 var mongo = builder.AddMongoDB("mongo")
-    .WithEndpoint("tcp", endpoint =>
-    {
-        endpoint.Port = 27017;
-        endpoint.TargetPort = 27017;
-        endpoint.Protocol = ProtocolType.Tcp;
-    })
     .WithDataVolume()
     .WithMongoExpress()
     .WithLifetime(ContainerLifetime.Persistent);
 
+// The Api reads Database:ConnectionString, so Aspire injects the container's connection string as that env var.
 builder.AddProject<Projects.<Company>_<App>_Api>("api")
     .WithEnvironment("DOTNET_ENVIRONMENT", "Development")
+    .WithEnvironment("Database__ConnectionString", mongo)
     .WaitFor(mongo);
 
 builder.Build().Run();
