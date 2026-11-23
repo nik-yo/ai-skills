@@ -18,7 +18,7 @@ Config comes from `VITE_*` env vars that Vite writes into the bundle at build ti
 web/
   app/
     root.tsx  routes.ts  app.css  entry.client.tsx
-    routes/                 # public pages + routes/authn-required/** behind sign-in
+    routes/                 # all pages; signed-in ones nest under signed-in-layout.tsx
     components/
     lib/ auth/  config/  api/ (axios-instance.ts, errors.ts, generated/)  terms.ts  format.ts
   public/                   # favicon.ico, favicon.svg, apple-touch-icon.png
@@ -347,9 +347,9 @@ export default [
   route("delete-account", "routes/delete-account.tsx"),
   route("signup", "routes/signup.tsx"),
   route("logout", "routes/logout.tsx"),
-  layout("routes/authn-required/layout.tsx", [
-    route("dashboard", "routes/authn-required/dashboard.tsx"),
-    route("profile", "routes/authn-required/profile.tsx"),
+  layout("routes/signed-in-layout.tsx", [
+    route("dashboard", "routes/dashboard.tsx"),
+    route("profile", "routes/profile.tsx"),
   ]),
 ] satisfies RouteConfig;
 ```
@@ -364,7 +364,7 @@ export default [
 | `dashboard` | A placeholder welcome page for features to grow into |
 | `profile` | Shows the email, edits the name (`PUT /users/me`), and deletes the account (`DELETE /users/me` after a confirm modal, then logs out) |
 
-`routes/authn-required/layout.tsx` is wrapped in `withAuthenticationRequired` from `react-oidc-context`, which redirects to sign-in and calls
+`routes/signed-in-layout.tsx` is wrapped in `withAuthenticationRequired` from `react-oidc-context`, which redirects to sign-in and calls
 `rememberReturnTo` first. It does this:
 1. **Terms gate.** Users agree to the Terms of Use before anything else, including registering with the API. `lib/terms.ts` keeps
    acceptance in localStorage under a key that includes the user's `sub` and the terms version. React state covers browsers where
