@@ -1,5 +1,5 @@
 ---
-name: check-news
+name: tech-news
 description: Find the technologies a repository uses and gather recent news about each one into a single digest ranked by how much it matters to this repo. Covers frameworks, languages, runtimes, SDKs, mobile platforms, databases, cloud services, CI systems and container images. The digest includes security advisories, end-of-life and deprecation notices, new major and minor releases, breaking changes, previews and roadmap announcements, and notable ecosystem news. Each item is checked against the version the repo pins. Use it whenever the user asks what's new or what changed in their stack, wants a tech news digest, release roundup or changelog summary for their dependencies, asks "anything I should know about" the frameworks or tools a project uses, or wants to stay current on the tech in a repo, even if they only name one technology.
 argument-hint: "[path] [--since <days|YYYY-MM-DD>] [--only <tech,...>] [--page]"
 ---
